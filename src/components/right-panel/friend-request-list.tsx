@@ -16,6 +16,7 @@ export const FriendRequestList = ({
   followRequests,
 }: FriendRequestListProps) => {
   const [requestState, setRequestState] = useState(followRequests);
+
   const [optimisticRequestState, setOptimisticRequestState] = useOptimistic(
     requestState,
     (state, value: string) => {

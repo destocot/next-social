@@ -42,7 +42,7 @@ export const UserInfoCard = async ({ profileUser }: UserInfoCardProps) => {
         <span className="text-gray-500">User Information</span>
 
         {currentUser.userId === profileUser.userId ? (
-          <UpdateUser />
+          <UpdateUser user={currentUser} />
         ) : (
           <Link href="/" className="text-blue-500 text-xs">
             See all
@@ -95,7 +95,7 @@ export const UserInfoCard = async ({ profileUser }: UserInfoCardProps) => {
             <div className="flex gap-x-1 items-center">
               <Image src="/link.png" alt="link" width="16" height="16" />
               <Link href="#" className="text-blue-500 font-medium">
-                lfleming.dev
+                {profileUser.website}
               </Link>
             </div>
           )}

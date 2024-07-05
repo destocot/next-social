@@ -6,6 +6,7 @@ import { delay } from "@/lib/utils";
 export async function getUserFromClerkId() {
   try {
     const { userId: clerkId } = auth();
+
     if (!clerkId) {
       throw new Error("No Clerk ID found");
     }
@@ -27,7 +28,6 @@ export async function getUserFromClerkId() {
 async function findUserByClerkId(clerkId: string) {
   return prisma.user.findUnique({
     where: { clerkId },
-    select: { userId: true },
   });
 }
 
