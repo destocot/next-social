@@ -1,90 +1,38 @@
-import Image from "next/image";
+import { prisma } from "@/lib/db";
+import { getUserFromClerkId } from "@/lib/server-utils";
+import { StoryList } from "@/components/center-panel/story-list";
 
-export const Stories = () => {
+export const Stories = async () => {
+  const currentUser = await getUserFromClerkId();
+
+  if (!currentUser) return null;
+
+  const stories = await prisma.story.findMany({
+    where: {
+      expiresAt: {
+        gt: new Date(),
+      },
+      OR: [
+        {
+          user: {
+            followers: {
+              some: {
+                followerUserId: currentUser.userId,
+              },
+            },
+          },
+        },
+        {
+          userId: currentUser.userId,
+        },
+      ],
+    },
+    include: { user: true },
+  });
+
   return (
     <div className="p-4 bg-white rounded-lg shadow-md overflow-x-auto text-xs font-medium scrollbar-hide">
-      <div className="flex gap-x-8 w-max">
-        <div className="flex flex-col items-center gap-y-2 cursor-pointer">
-          <Image
-            src="https://picsum.photos/id/237/200/300"
-            alt="user story"
-            width="80"
-            height="80"
-            className="w-20 h-20 rounded-full ring-2 object-cover"
-          />
-          Ricky
-        </div>
-        <div className="flex flex-col items-center gap-y-2 cursor-pointer">
-          <Image
-            src="https://picsum.photos/id/237/200/300"
-            alt="user story"
-            width="80"
-            height="80"
-            className="w-20 h-20 rounded-full ring-2 object-cover"
-          />
-          Ricky
-        </div>
-        <div className="flex flex-col items-center gap-y-2 cursor-pointer">
-          <Image
-            src="https://picsum.photos/id/237/200/300"
-            alt="user story"
-            width="80"
-            height="80"
-            className="w-20 h-20 rounded-full ring-2 object-cover"
-          />
-          Ricky
-        </div>
-        <div className="flex flex-col items-center gap-y-2 cursor-pointer">
-          <Image
-            src="https://picsum.photos/id/237/200/300"
-            alt="user story"
-            width="80"
-            height="80"
-            className="w-20 h-20 rounded-full ring-2 object-cover"
-          />
-          Ricky
-        </div>
-        <div className="flex flex-col items-center gap-y-2 cursor-pointer">
-          <Image
-            src="https://picsum.photos/id/237/200/300"
-            alt="user story"
-            width="80"
-            height="80"
-            className="w-20 h-20 rounded-full ring-2 object-cover"
-          />
-          Ricky
-        </div>
-        <div className="flex flex-col items-center gap-y-2 cursor-pointer">
-          <Image
-            src="https://picsum.photos/id/237/200/300"
-            alt="user story"
-            width="80"
-            height="80"
-            className="w-20 h-20 rounded-full ring-2 object-cover"
-          />
-          Ricky
-        </div>
-        <div className="flex flex-col items-center gap-y-2 cursor-pointer">
-          <Image
-            src="https://picsum.photos/id/237/200/300"
-            alt="user story"
-            width="80"
-            height="80"
-            className="w-20 h-20 rounded-full ring-2 object-cover"
-          />
-          Ricky
-        </div>
-        <div className="flex flex-col items-center gap-y-2 cursor-pointer">
-          <Image
-            src="https://picsum.photos/id/237/200/300"
-            alt="user story"
-            width="80"
-            height="80"
-            className="w-20 h-20 rounded-full ring-2 object-cover"
-          />
-          Ricky
-        </div>
-      </div>
+      <StoryList stories={stories} currentUser={currentUser} />
     </div>
   );
 };

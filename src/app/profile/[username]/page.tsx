@@ -1,4 +1,4 @@
-import { FeedPost } from "@/components/center-panel/feed-post";
+import { Feed } from "@/components/center-panel/feed";
 import { UserProfileHeader } from "@/components/center-panel/user-profile-header";
 import { LeftPanel } from "@/components/left-panel/left-panel";
 import { RightPanel } from "@/components/right-panel/right-panel";
@@ -33,7 +33,7 @@ export default async function Page({ params }: PageProps) {
       <div className="w-full lg:w-4/6 xl:w-3/6">
         <div className="flex flex-col gap-y-6">
           <UserProfileHeader profileUser={profileUser} />
-          <FeedPost />
+          <Feed username={profileUser.username} />
         </div>
       </div>
 

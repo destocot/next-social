@@ -1,17 +1,21 @@
 "use client";
 
-import { updateProfile } from "@/lib/actions";
-import { User } from "@prisma/client";
-import { CldUploadWidget } from "next-cloudinary";
+import type { User } from "@prisma/client";
 import Image from "next/image";
-import { useState } from "react";
-import type { CloudinaryUploadWidgetResults } from "next-cloudinary";
+import { useActionState, useState } from "react";
+import { CldUploadWidget } from "next-cloudinary";
+import type { CloudinaryUploadWidgetInfo } from "next-cloudinary";
+
+import { updateProfile } from "@/lib/actions";
+import { UpdateUserButton } from "@/components/right-panel/update-user-button";
 
 type UpdateUserProps = { user: User };
 
 export const UpdateUser = ({ user }: UpdateUserProps) => {
   const [open, setOpen] = useState(false);
-  const [cover, setCover] = useState<CloudinaryUploadWidgetResults["info"]>();
+  const [cover, setCover] = useState<CloudinaryUploadWidgetInfo>();
+
+  const [state, action] = useActionState(updateProfile, null);
 
   const onClick = () => {
     setOpen((prev) => !prev);
@@ -26,10 +30,8 @@ export const UpdateUser = ({ user }: UpdateUserProps) => {
       {open && (
         <div className="absolute w-screen h-screen top-0 left-0 bg-black bg-opacity-65 flex items-center justify-center z-50">
           <form
-            action={async (formData) => {
-              if (typeof cover === "string") return;
-              const res = await updateProfile(formData, cover?.secure_url);
-              if (res.success) onClick();
+            action={(formData) => {
+              action({ formData, cover: cover?.secure_url });
             }}
             className="p-12 bg-white rounded-lg shadow-md flex flex-col gap-2 w-full md:w-1/2 xl:1-/3 relative"
           >
@@ -41,8 +43,9 @@ export const UpdateUser = ({ user }: UpdateUserProps) => {
 
             <CldUploadWidget
               uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
-              onSuccess={(result) => {
-                setCover(result.info);
+              onSuccess={(result, widget) => {
+                setCover(result.info as CloudinaryUploadWidgetInfo);
+                widget.close();
               }}
             >
               {({ open }) => {
@@ -168,12 +171,17 @@ export const UpdateUser = ({ user }: UpdateUserProps) => {
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="bg-blue-500 p-2 mt-2 rounded-md text-white"
-            >
-              Update
-            </button>
+            <UpdateUserButton />
+
+            {state === null ? null : state.success ? (
+              <span className="bg-green-600 px-0.5 text-white rounded">
+                Profile has been updated!
+              </span>
+            ) : (
+              <span className="bg-red-600 px-0.5 text-white rounded">
+                Something went wrong!
+              </span>
+            )}
 
             <div
               onClick={onClick}

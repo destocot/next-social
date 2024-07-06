@@ -1,4 +1,5 @@
 import { CreatePost } from "@/components/center-panel/create-post";
+import { Feed } from "@/components/center-panel/feed";
 import { FeedPost } from "@/components/center-panel/feed-post";
 import { Stories } from "@/components/center-panel/stories";
 import { LeftPanel } from "@/components/left-panel/left-panel";
@@ -15,7 +16,7 @@ export default function Page() {
         <div className="flex flex-col gap-y-6">
           <Stories />
           <CreatePost />
-          <FeedPost />
+          <Feed />
         </div>
       </div>
 

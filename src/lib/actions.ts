@@ -1,6 +1,6 @@
 "use server";
 
-import { User } from "@prisma/client";
+import type { Post, Story, User } from "@prisma/client";
 import {
   getFollowRequestStatus,
   getFollowStatus,
@@ -128,10 +128,12 @@ const ProfileSchema = v.object({
 });
 
 export const updateProfile = async (
-  formData: FormData,
-  secure_url?: string
+  prevState: null | { success: boolean },
+  payload: { formData: FormData; cover?: string }
 ) => {
-  if (secure_url) formData.set("cover", secure_url);
+  const { formData, cover } = payload;
+
+  if (cover) formData.set("cover", cover);
   const values = Object.fromEntries(formData.entries());
 
   for (const key in values) {
@@ -157,5 +159,139 @@ export const updateProfile = async (
   } catch (err) {
     console.error(err);
     return { success: false };
+  }
+};
+
+export const toggleLike = async (postId: Post["postId"]) => {
+  const currentUser = await getUserFromClerkId();
+
+  try {
+    const existingLike = await prisma.like.findFirst({
+      where: {
+        postId,
+        userId: currentUser.userId,
+      },
+    });
+
+    if (existingLike) {
+      await prisma.like.delete({
+        where: { likeId: existingLike.likeId },
+      });
+    } else {
+      await prisma.like.create({
+        data: {
+          postId,
+          userId: currentUser.userId,
+        },
+      });
+    }
+
+    revalidatePath("/");
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+export const addComment = async (
+  postId: Post["postId"],
+  description: Post["description"]
+) => {
+  const currentUser = await getUserFromClerkId();
+
+  try {
+    await prisma.comment.create({
+      data: {
+        postId,
+        userId: currentUser.userId,
+        description,
+      },
+    });
+
+    revalidatePath("/");
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const PostSchema = v.object({
+  description: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(255)),
+  image: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1))),
+});
+
+export const createPost = async (formData: FormData, image?: Post["image"]) => {
+  if (image) formData.set("image", image);
+  const values = Object.fromEntries(formData.entries());
+
+  const parsedValues = v.safeParse(PostSchema, values);
+
+  if (!parsedValues.success) {
+    console.error(v.flatten(parsedValues.issues));
+    return { success: false };
+  }
+
+  const data = parsedValues.output;
+
+  try {
+    const currentUser = await getUserFromClerkId();
+    const userId = currentUser.userId;
+
+    await prisma.post.create({ data: { ...data, userId } });
+    revalidatePath("/");
+    return { success: true };
+  } catch (err) {
+    console.error(err);
+    return { success: false };
+  }
+};
+
+export const createStory = async (image: Story["image"]) => {
+  const currentUser = await getUserFromClerkId();
+
+  try {
+    const existingStory = await prisma.story.findFirst({
+      where: {
+        userId: currentUser.userId,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+    });
+
+    if (existingStory) {
+      await prisma.story.delete({
+        where: { storyId: existingStory.storyId },
+      });
+    }
+
+    await prisma.story.create({
+      data: {
+        userId: currentUser.userId,
+        image,
+        expiresAt: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
+      },
+    });
+
+    revalidatePath("/");
+    return { success: true };
+  } catch (err) {
+    console.error(err);
+    return { success: false };
+  }
+};
+
+export const deletePost = async (postId: Post["postId"]) => {
+  const currentUser = await getUserFromClerkId();
+
+  try {
+    await prisma.post.delete({
+      where: {
+        postId,
+        userId: currentUser.userId,
+      },
+    });
+
+    revalidatePath("/");
+  } catch (err) {
+    console.error(err);
   }
 };

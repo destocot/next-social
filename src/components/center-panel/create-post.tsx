@@ -1,12 +1,29 @@
-import { prisma } from "@/lib/db";
-import { auth } from "@clerk/nextjs/server";
+"use client";
+
+import { useUser } from "@clerk/nextjs";
+import {
+  CldUploadWidget,
+  type CloudinaryUploadWidgetInfo,
+} from "next-cloudinary";
 import Image from "next/image";
+import { useState } from "react";
+import { CreatePostButton } from "./create-post-button";
+import { createPost } from "@/lib/actions";
+import toast from "react-hot-toast";
 
 export const CreatePost = () => {
+  const { user: clerkUser, isLoaded } = useUser();
+
+  const [desc, setDesc] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [image, setImage] = useState<CloudinaryUploadWidgetInfo>();
+
+  if (!isLoaded) return "Loading...";
+
   return (
-    <div className="p-4 bg-white rounded-lg shadow-md flex gap-x-4 justify-between text-sm">
+    <div className="p-4 bg-white rounded-lg shadow-md flex gap-x-2 justify-between text-sm">
       <Image
-        src="https://picsum.photos/id/238/200/300"
+        src={clerkUser?.imageUrl ?? "/noAvatar.png"}
         alt="user image"
         width="48"
         height="48"
@@ -14,26 +31,61 @@ export const CreatePost = () => {
       />
 
       <div className="grow">
-        <form className="flex gap-x-4">
+        <form
+          action={async (formData) => {
+            const res = await createPost(formData, image?.secure_url);
+            if (res.success) {
+              toast.success("Post created successfully");
+              setDesc("");
+            }
+          }}
+          className="flex gap-x-2"
+        >
           <textarea
+            disabled={creating}
             placeholder="What's on your mind?"
-            className="bg-slate-100 rounded-lg grow p-2"
+            className="bg-slate-100 rounded-lg grow p-2 disabled:opacity-50 disabled:cursor-text"
             name="description"
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
           ></textarea>
-          <Image
-            src="/emoji.png"
-            alt=""
-            width="20"
-            height="20"
-            className="w-5 h-5 cursor-pointer self-end"
-          />
+
+          <div>
+            <Image
+              src="/emoji.png"
+              alt=""
+              width="20"
+              height="20"
+              className="w-5 h-5 cursor-pointer self-end"
+              onClick={() => {
+                setDesc((prev) => prev + " 😀");
+              }}
+            />
+            <CreatePostButton />
+          </div>
         </form>
 
         <div className="flex items-center gap-4 mt-4 text-gray-400 flex-wrap">
-          <div className="flex items-center gap-x-2 cursor-pointer">
-            <Image src="/addimage.png" alt="" width="20" height="20" />
-            Photo
-          </div>
+          <CldUploadWidget
+            uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+            onSuccess={(result, widget) => {
+              setImage(result.info as CloudinaryUploadWidgetInfo);
+              widget.close();
+            }}
+          >
+            {({ open }) => {
+              return (
+                <div
+                  className="flex items-center gap-x-2 cursor-pointer"
+                  onClick={() => open()}
+                >
+                  <Image src="/addimage.png" alt="" width="20" height="20" />
+                  Photo
+                </div>
+              );
+            }}
+          </CldUploadWidget>
+
           <div className="flex items-center gap-x-2 cursor-pointer">
             <Image src="/addVideo.png" alt="" width="20" height="20" />
             Video

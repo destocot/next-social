@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
-import { Block, Follow, FollowRequest, User } from "@prisma/client";
+import type { Block, Follow, User } from "@prisma/client";
 import { delay } from "@/lib/utils";
 
 export async function getUserFromClerkId() {
